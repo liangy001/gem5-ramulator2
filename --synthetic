@@ -1,0 +1,10 @@
+gem5 Simulator System.  https://www.gem5.org
+gem5 is copyrighted software; use the --copyright option for details.
+
+gem5 version 23.1.0.0
+gem5 compiled Jul 22 2024 07:28:34
+gem5 started Jul 22 2024 13:07:22
+gem5 executing on gem5, pid 108245
+command line: ./build/X86/gem5.opt configs/example/gem5_library/x86-gapbs-benchmarks.py --benchmark hmark_nam thetic --size simulation_sizr
+
+info: Using default config
