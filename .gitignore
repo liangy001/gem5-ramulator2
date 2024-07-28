@@ -1,6 +1,7 @@
 build
 full-system-image
 output
+DDR4_bfs_m5out
 gem5_build
 parser.out
 parsetab.py
