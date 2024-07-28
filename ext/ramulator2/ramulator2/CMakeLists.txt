@@ -33,8 +33,8 @@ option(YAML_CPP_BUILD_TOOLS "Enable parse tools" OFF)
 option(YAML_BUILD_SHARED_LIBS "Build yaml-cpp as a shared library" OFF)
 FetchContent_Declare(
   yaml-cpp                             
-  GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
-  GIT_TAG        yaml-cpp-0.7.0                        
+#  GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
+#  GIT_TAG        yaml-cpp-0.7.0                        
   SOURCE_DIR     ${CMAKE_SOURCE_DIR}/ext/yaml-cpp
 )
 FetchContent_MakeAvailable(yaml-cpp)
@@ -44,8 +44,8 @@ message("Done configuring yaml-cpp.")
 message("Configuring spdlog...")
 FetchContent_Declare(
   spdlog                             
-  GIT_REPOSITORY https://github.com/gabime/spdlog.git
-  GIT_TAG        v1.11.0     
+#  GIT_REPOSITORY https://github.com/gabime/spdlog.git
+#  GIT_TAG        v1.11.0     
   SOURCE_DIR     ${CMAKE_SOURCE_DIR}/ext/spdlog
 )
 FetchContent_MakeAvailable(spdlog)
@@ -55,8 +55,8 @@ message("Done configuring spdlog.")
 message("Configuring argparse...")
 FetchContent_Declare(
     argparse
-    GIT_REPOSITORY https://github.com/p-ranav/argparse.git
-    GIT_TAG        v2.9     
+#    GIT_REPOSITORY https://github.com/p-ranav/argparse.git
+#    GIT_TAG        v2.9     
     SOURCE_DIR     ${CMAKE_SOURCE_DIR}/ext/argparse
 )
 FetchContent_MakeAvailable(argparse)

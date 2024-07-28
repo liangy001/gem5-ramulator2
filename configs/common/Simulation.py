@@ -231,10 +231,13 @@ def findCptDir(options, cptdir, testsys):
 
     else:
         dirs = listdir(cptdir)
+        print("cptdir:", cptdir)
+        print("dirs:", dirs)
         expr = re.compile(r"cpt\.([0-9]+)")
         cpts = []
         for dir in dirs:
             match = expr.match(dir)
+            print("match:", match)
             if match:
                 cpts.append(match.group(1))
 
