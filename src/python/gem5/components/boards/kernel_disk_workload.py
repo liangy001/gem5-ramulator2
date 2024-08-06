@@ -40,6 +40,7 @@ from ...resources.resource import (
     CheckpointResource,
     DiskImageResource,
     KernelResource,
+    SimpointResource,
 )
 from .abstract_board import AbstractBoard
 
@@ -241,3 +242,85 @@ class KernelDiskWorkload:
                     "Checkpoints must be passed as a Path or an "
                     "CheckpointResource."
                 )
+
+    def set_simpoint_kernel_disk_workload(
+        self,
+        kernel: KernelResource,
+        disk_image: DiskImageResource,
+        bootloader: Optional[BootloaderResource] = None,
+        simpoint: SimpointResource = None,
+        disk_device: Optional[str] = None,
+        readfile: Optional[str] = None,
+        readfile_contents: Optional[str] = None,
+        kernel_args: Optional[List[str]] = None,
+        exit_on_work_items: bool = True,
+        checkpoint: Optional[Union[Path, CheckpointResource]] = None,
+    ) -> None:
+        """Set up the system to run a SimPoint workload.
+
+        **Limitations**
+        * Only supports single threaded applications.
+        * Dynamically linked executables are partially supported when the host
+          ISA and the simulated ISA are the same.
+
+        .. warning::
+
+            SimPoints only works with one core
+
+        This function allows the setting of a full-system run with a Kernel
+        and a disk image.
+
+        :param kernel: The kernel to boot.
+        :param disk_image: The disk image to mount.
+        :param bootloader: The current implementation of the ARM board requires
+                           three resources to operate -- kernel, disk image,
+                           and, a bootloader.
+        :param simpoint: The SimpointResource that contains the list of
+                         SimPoints starting instructions, the list of
+                         weights, and the SimPoints interval.
+        :param readfile: An optional parameter stating the file to be read by
+                         by ``m5 readfile``.
+        :param readfile_contents: An optional parameter stating the contents of
+                                  the readfile file. If set with ``readfile``,
+                                  the contents of `readfile` will be overwritten
+                                  with ``readfile_contents``, otherwise a new file
+                                  will be created with the value of
+                                  ``readfile_contents``.
+        :param kernel_args: An optional parameter for setting arguments to be
+                            passed to the kernel. By default set to
+                            ``get_default_kernel_args()``.
+        :param exit_on_work_items: Whether the simulation should exit on work
+                                   items. ``True`` by default.
+        :param checkpoint: The checkpoint directory. Used to restore the
+                           simulation to that checkpoint.
+        """
+
+        self._simpoint_resource = simpoint
+
+        if self.get_processor().get_num_cores() > 1:
+            warn("SimPoints only works with one core")
+        self.get_processor().get_cores()[0]._set_simpoint(
+            inst_starts=self._simpoint_resource.get_simpoint_start_insts(),
+            board_initialized=False,
+        )
+
+        self.set_kernel_disk_workload(
+            kernel=kernel,
+            disk_image=disk_image,
+            bootloader=bootloader,
+            disk_device=disk_device,
+            readfile=readfile,
+            readfile_contents=readfile_contents,
+            kernel_args=kernel_args,
+            exit_on_work_items=True,
+            checkpoint=checkpoint,
+        )
+
+    def get_simpoint(self) -> SimpointResource:
+        """
+        Returns the SimpointResorce object set. If no SimpointResource object
+        has been set an exception is thrown.
+        """
+        if getattr(self, "_simpoint_resource", None):
+            return self._simpoint_resource
+        raise Exception("This board does not have a simpoint set.")

@@ -192,13 +192,14 @@ def build_test_system(np, isa: ISA):
             test_sys.iobridge.mem_side_port = test_sys.membus.cpu_side_ports
 
         # Sanity check
-        if args.simpoint_profile:
-            if not ObjectList.is_noncaching_cpu(TestCPUClass):
-                fatal("SimPoint generation should be done with atomic cpu")
-            if np > 1:
-                fatal(
-                    "SimPoint generation not supported with more than one CPUs"
-                )
+        # if args.simpoint_profile:
+        #     print(TestCPUClass)
+        #     if not ObjectList.is_noncaching_cpu(TestCPUClass):
+        #         fatal("SimPoint generation should be done with atomic cpu")
+        #     if np > 1:
+        #         fatal(
+        #             "SimPoint generation not supported with more than one CPUs"
+        #         )
 
         for i in range(np):
             if args.simpoint_profile:

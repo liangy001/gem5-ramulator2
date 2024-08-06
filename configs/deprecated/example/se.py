@@ -84,6 +84,7 @@ def get_processes(args):
     workloads = args.cmd.split(";")
     if args.input != "":
         inputs = args.input.split(";")
+        print("inputs:", inputs)
     if args.output != "":
         outputs = args.output.split(";")
     if args.errout != "":

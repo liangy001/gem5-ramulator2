@@ -67,7 +67,10 @@ from gem5.components.processors.simple_switchable_processor import (
     SimpleSwitchableProcessor,
 )
 from gem5.isas import ISA
-from gem5.resources.resource import obtain_resource
+from gem5.resources.resource import (
+    SimpointResource,
+    obtain_resource,
+)
 from gem5.simulate.exit_event import ExitEvent
 from gem5.simulate.exit_event_generators import save_checkpoint_generator
 from gem5.simulate.simulator import Simulator
@@ -96,10 +99,18 @@ parser = argparse.ArgumentParser(
 # )
 
 parser.add_argument(
-    "--checkpoint-path",
+    "--checkpoint-input-path",
     type=str,
     required=False,
-    default="riscv-hello-checkpoint/",
+    default="",
+    help="The directory to restore the checkpoint.",
+)
+
+parser.add_argument(
+    "--checkpoint-output-path",
+    type=str,
+    required=False,
+    default="",
     help="The directory to store the checkpoint.",
 )
 
@@ -109,16 +120,9 @@ args = parser.parse_args()
 # Setting up all the fixed system parameters here
 # Caches: MESI Two Level Cache Hierarchy
 
-from gem5.components.cachehierarchies.classic.private_l1_private_l2_cache_hierarchy import (
-    PrivateL1PrivateL2CacheHierarchy,
-)
-from gem5.components.cachehierarchies.ruby.mesi_two_level_cache_hierarchy import (
-    MESITwoLevelCacheHierarchy,
-)
+from gem5.components.cachehierarchies.classic.no_cache import NoCache
 
-cache_hierarchy = PrivateL1PrivateL2CacheHierarchy(
-    l1d_size="32KiB", l1i_size="32KiB", l2_size="512KiB"
-)
+cache_hierarchy = NoCache()
 # Memory: Dual Channel DDR4 2400 DRAM device.
 # The X86 board only supports 3 GB of main memory.
 
@@ -131,14 +135,8 @@ memory = SingleChannelDDR4_2400(size="3GB")
 # we start with KVM cores to simulate the OS boot, then switch to the Timing
 # cores for the command we wish to run after boot.
 
-processor = SimpleProcessor(cpu_type=CPUTypes.O3, isa=ISA.X86, num_cores=1)
+processor = SimpleProcessor(cpu_type=CPUTypes.ATOMIC, isa=ISA.X86, num_cores=1)
 
-# processor = SimpleSwitchableProcessor(
-#     starting_core_type=CPUTypes.KVM,
-#     switch_core_type=CPUTypes.O3,
-#     isa=ISA.X86,
-#     num_cores=1,
-# )
 
 # Here we setup the board. The X86Board allows for Full-System X86 simulations
 
@@ -158,16 +156,33 @@ board = X86Board(
 # committed instructions till ROI ends (marked by `workend`). We then finish
 # executing the rest of the benchmark.
 
-# board.set_kernel_disk_workload(
-#     obtain_resource(args.benchmark),
-#     checkpoint=Path(args.checkpoint_path),
-# )
+# command = "m5 exit;" \
+#         + "echo 'This is running on ATOMIC CPU cores.';" \
+#         + "./bfs -f test/graphs/4.mtx;" \
+#         + "sleep 1;" \
+#         + "m5 exit;" \
+#         + "sleep 1;" \
+#         + "m5 exit;"
 
-board.set_kernel_disk_workload(
+command = (
+    f"cd /home/gem5/parsec-benchmark;"
+    + "source env.sh;"
+    + f"parsecmgmt -a run -p  -c gcc-hooks -i         -n 2;"
+    + "sleep 5;"
+    + "m5 exit;"
+)
+
+board.set_simpoint_kernel_disk_workload(
     kernel=obtain_resource("x86-linux-kernel-4.19.83"),
     disk_image=obtain_resource("x86-gapbs"),
-    readfile_contents="./bfs -f test/graphs/4.mtx",
-    checkpoint=Path(args.checkpoint_path),
+    readfile_contents=command,
+    simpoint=SimpointResource(
+        simpoint_interval=1000000,
+        simpoint_list=[2, 3, 4, 15],
+        weight_list=[0.1, 0.2, 0.4, 0.3],
+        warmup_interval=1000000,
+    ),
+    checkpoint=Path(args.checkpoint_input_path),
 )
 
 
@@ -189,10 +204,19 @@ def handle_workend():
     yield True  # Stop the simulation. We're done.
 
 
+dir = Path(args.checkpoint_output_path)
+
+
+def hand_simpoint(_dir):
+    print("##hand_simpoint##")
+    save_checkpoint_generator(_dir)
+
+
 simulator = Simulator(
     board=board,
     on_exit_event={
         ExitEvent.WORKBEGIN: handle_workbegin(),
+        ExitEvent.SIMPOINT_BEGIN: hand_simpoint(dir),
         ExitEvent.WORKEND: handle_workend(),
     },
 )
